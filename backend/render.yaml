@@ -1,0 +1,31 @@
+# Render Deployment Configuration
+# https://render.com
+
+# Build Command
+npm install
+
+# Start Command
+npm start
+
+# Environment Variables (Set in Render Dashboard)
+# - MONGO_URI
+# - JWT_SECRET
+# - REFRESH_TOKEN_SECRET
+# - RESEND_API_KEY
+# - EMAIL_FROM
+# - GOOGLE_CLIENT_ID
+# - GOOGLE_CLIENT_SECRET
+# - GOOGLE_CALLBACK_URL
+# - CLOUDINARY_CLOUD_NAME
+# - CLOUDINARY_API_KEY
+# - CLOUDINARY_API_SECRET
+# - GEMINI_API_KEY
+# - GEMINI_MODEL
+# - CLIENT_URL
+# - NODE_ENV=production
+
+# Health Check Path
+/health
+
+# Auto-Deploy
+# Enable auto-deploy from main branch in Render dashboard
