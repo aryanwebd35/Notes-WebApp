@@ -1,307 +1,147 @@
-# 🚀 Notes App - Production-Ready MERN Application
-
-[![CI/CD](https://github.com/yourusername/notes-app/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/yourusername/notes-app/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-A full-stack, production-ready notes application with AI-powered features, real-time reminders, secure sharing, and version control.
-
-## ✨ Features
-
-### Core Features
-- 🔐 **Secure Authentication** - JWT + Google OAuth + Email Verification
-- 📝 **Rich Text Editor** - TipTap with auto-save
-- 📎 **File Uploads** - Images & documents via Cloudinary
-- 🤝 **Note Sharing** - User-to-user + shareable links with permissions
-- ⏰ **Reminders** - Automated email notifications with cron scheduler
-- 🤖 **AI Features** - Title generation, summarization, tags (Google Gemini)
-- 📜 **Version History** - Restore previous versions (20 versions/note)
-- 🔄 **Refresh Tokens** - Automatic token rotation for security
-
-### Security
-- ✅ Helmet (HTTP headers)
-- ✅ CORS (strict origin control)
-- ✅ Rate limiting (auth, AI, sharing)
-- ✅ Input validation & sanitization
-- ✅ XSS & NoSQL injection prevention
-- ✅ Password hashing (bcrypt)
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-- React 18
-- Redux Toolkit
-- Tailwind CSS
-- TipTap Editor
-- Axios
-
-**Backend:**
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT Authentication
-- Google Gemini AI
-- Nodemailer/Resend
-- node-cron
-
-**DevOps:**
-- GitHub Actions (CI/CD)
-- Vercel (Frontend)
-- Render/Railway (Backend)
-- MongoDB Atlas
-
-## 📋 Prerequisites
-
-- Node.js 18+ and npm
-- MongoDB (local or Atlas)
-- Google Cloud Console account (OAuth)
-- Cloudinary account (file uploads)
-- Resend/Gmail account (emails)
-- Google AI Studio account (Gemini API)
-
-## 🚀 Quick Start
-
-### 1. Clone Repository
-
-\`\`\`bash
-git clone https://github.com/yourusername/notes-app.git
-cd notes-app
-\`\`\`
-
-### 2. Backend Setup
-
-\`\`\`bash
-cd backend
-npm install
-\`\`\`
-
-**Configure Environment:**
-\`\`\`bash
-cp .env.example .env
-# Edit .env with your credentials
-\`\`\`
-
-**Required Variables:**
-- \`MONGO_URI\` - MongoDB connection string
-- \`JWT_SECRET\` - Random secret for JWT
-- \`REFRESH_TOKEN_SECRET\` - Different random secret
-- \`RESEND_API_KEY\` - Resend API key
-- \`GEMINI_API_KEY\` - Google Gemini API key
-- \`GOOGLE_CLIENT_ID\` - Google OAuth client ID
-- \`GOOGLE_CLIENT_SECRET\` - Google OAuth secret
-- \`CLOUDINARY_*\` - Cloudinary credentials
-
-**Start Backend:**
-\`\`\`bash
-npm run dev
-\`\`\`
-
-Server runs on http://localhost:5000
-
-### 3. Frontend Setup
-
-\`\`\`bash
-cd frontend
-npm install
-\`\`\`
-
-**Configure Environment:**
-\`\`\`bash
-# Create .env
-echo "VITE_API_URL=http://localhost:5000" > .env
-\`\`\`
-
-**Start Frontend:**
-\`\`\`bash
-npm run dev
-\`\`\`
-
-App runs on http://localhost:5173
-
-## 🧪 Testing
-
-\`\`\`bash
-cd backend
-npm test              # Run all tests
-npm run test:watch    # Watch mode
-\`\`\`
-
-**Test Coverage:**
-- Auth integration tests
-- Notes CRUD tests
-- Mock external services
-
-## 📦 Deployment
-
-### Backend (Render/Railway)
-
-1. **Create New Web Service**
-2. **Connect GitHub Repository**
-3. **Configure:**
-   - Build Command: \`npm install\`
-   - Start Command: \`npm start\`
-   - Environment: Add all variables from \`.env.production\`
-4. **Deploy**
-
-Health check: \`https://your-api.onrender.com/health\`
-
-### Frontend (Vercel)
-
-1. **Import Project from GitHub**
-2. **Configure:**
-   - Framework: Vite
-   - Build Command: \`npm run build\`
-   - Output Directory: \`dist\`
-   - Environment Variable: \`VITE_API_URL=https://your-api.onrender.com\`
-3. **Deploy**
-
-### MongoDB Atlas
-
-1. **Create Cluster**
-2. **Create Database User**
-3. **Whitelist IP** (0.0.0.0/0 for cloud deployment)
-4. **Get Connection String**
-5. **Add to Backend Environment**
-
-## 🔒 Security Checklist
-
-- [x] Environment variables secured
-- [x] HTTPS enabled (Vercel/Render)
-- [x] CORS configured
-- [x] Rate limiting active
-- [x] Input validation
-- [x] XSS protection
-- [x] NoSQL injection prevention
-- [x] Secure password hashing
-- [x] JWT token rotation
-- [x] Error messages sanitized
-
-## 📊 API Endpoints
-
-### Authentication
-- \`POST /api/auth/register\` - Register user
-- \`POST /api/auth/login\` - Login
-- \`GET /api/auth/me\` - Get current user
-- \`POST /api/auth/refresh\` - Refresh token
-- \`POST /api/auth/logout\` - Logout
-- \`GET /api/auth/google\` - Google OAuth
-- \`POST /api/auth/verify-email\` - Verify email
-
-### Notes
-- \`GET /api/notes\` - Get all notes
-- \`POST /api/notes\` - Create note
-- \`GET /api/notes/:id\` - Get note
-- \`PUT /api/notes/:id\` - Update note
-- \`DELETE /api/notes/:id\` - Delete note
-- \`POST /api/notes/:id/upload\` - Upload file
-
-### Sharing
-- \`POST /api/notes/:id/share\` - Share with user
-- \`POST /api/notes/:id/share-link\` - Generate link
-- \`GET /api/notes/shared/:token\` - Access shared note
-
-### AI (Rate Limited: 10/hour)
-- \`POST /api/ai/generate-title\` - Generate title
-- \`POST /api/ai/summarize\` - Summarize note
-- \`POST /api/ai/suggest-tags\` - Suggest tags
-- \`POST /api/ai/improve\` - Improve writing
-
-### Version History
-- \`POST /api/notes/:id/versions\` - Create version
-- \`GET /api/notes/:id/versions\` - Get versions
-- \`POST /api/notes/:id/versions/:versionId/restore\` - Restore
-
-## 🔄 CI/CD Pipeline
-
-**GitHub Actions Workflow:**
-1. **Test** - Run Jest tests on push
-2. **Lint** - ESLint code quality check
-3. **Build** - Build frontend
-4. **Deploy** - Auto-deploy on main branch
-
-**Triggers:**
-- Push to \`main\` or \`develop\`
-- Pull requests to \`main\`
-
-## 📈 Monitoring
-
-**Health Check:**
-\`\`\`bash
-curl https://your-api.onrender.com/health
-\`\`\`
-
-**Logs:**
-- Render Dashboard → Logs
-- Vercel Dashboard → Deployments → Logs
-
-**Metrics to Monitor:**
-- API response times
-- Error rates
-- Auth failures
-- AI usage
-- Database performance
-
-## 🐛 Troubleshooting
-
-**Backend won't start:**
-- Check all environment variables are set
-- Verify MongoDB connection string
-- Check port 5000 is available
-
-**Frontend can't connect:**
-- Verify \`VITE_API_URL\` is correct
-- Check CORS configuration
-- Ensure backend is running
-
-**Email not sending:**
-- Verify Resend API key
-- Check email service configuration
-- Review rate limits
-
-**AI features failing:**
-- Verify Gemini API key
-- Check rate limits (10/hour)
-- Ensure API credits available
-
-## 📝 Environment Variables Guide
-
-### Development
-Use \`.env.example\` as template
-
-### Production
-Use \`.env.production\` as template
-
-**Critical:**
-- Generate strong random secrets for JWT
-- Use MongoDB Atlas (not local)
-- Enable HTTPS
-- Set \`NODE_ENV=production\`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (\`git checkout -b feature/AmazingFeature\`)
-3. Commit changes (\`git commit -m 'Add AmazingFeature'\`)
-4. Push to branch (\`git push origin feature/AmazingFeature\`)
-5. Open Pull Request
-
-## 📄 License
-
-MIT License - see LICENSE file
-
-## 👨‍💻 Author
-
-Your Name - [@yourhandle](https://twitter.com/yourhandle)
-
-## 🙏 Acknowledgments
-
-- TipTap for rich text editor
-- Google Gemini for AI features
-- Cloudinary for file storage
-- Resend for email service
+# Notes App - Digital Notebook
+
+A modern, feature-rich notes application built with the MERN stack (MongoDB, Express.js, React, Node.js). This application offers a seamless experience for creating, organizing, and sharing notes with advanced rich-text capabilities and secure authentication.
+
+## 🚀 Key Features
+
+### 📝 Core Note Management
+- **Rich Text Editor**: Powered by **TipTap**, supporting bold, italics, lists, code blocks, and more.
+- **CRUD Operations**: Create, read, update, and delete notes instantly.
+- **Organization**: Filter notes by "All", "Starred", and "Archived".
+- **Pinning**: Keep important notes at the top.
+- **Tags**: Add tags to notes for easy categorization (visualized in UI).
+
+### 🔒 Authentication & Security
+- **Secure Login/Signup**: Email/Password authentication using **BCrypt** and **JWT**.
+- **Google OAuth**: One-click login with Google using **Passport JS**.
+- **Guest Access**: "Continue as Guest" feature to try the app without registration (ephemeral accounts).
+- **Security Best Practices**: Helmet headers, Rate limiting, XSS protection, and Mongo sanitization.
+
+### 🤝 Sharing & Collaboration
+- **Share via Email**: Grant "View" or "Edit" permissions to other registered users.
+- **Public Links**: Generate time-limited public links for sharing notes externally.
+- **Share Requests**: In-app inbox to accept or reject incoming share invitations.
+- **Real-time Updates**: Visual indicators for shared status and permissions.
+
+### 🔔 Functionality & UX
+- **Reminders**: Set date/time reminders for notes with visual countdowns and overdue alerts.
+- **File Attachments**: Upload and attach images/files to notes (stored securely via **Cloudinary API**).
+- **Version History**: Track changes and restore previous versions of your notes.
+- **Global Search**: Instantly filter notes by title or content.
+- **Dark/Light Mode**: Fully responsive theme with a premium aesthetic (Slate Blue Light Mode / Deep Gray Dark Mode).
+- **Responsive Design**: Fully optimized for Desktop, Tablet, and Mobile workflows.
 
 ---
 
-**⭐ Star this repo if you find it helpful!**
+## 🛠️ Tech Stack
 
-**🐛 Found a bug? [Open an issue](https://github.com/yourusername/notes-app/issues)**
+### Frontend
+- **Framework**: [React](https://reactjs.org/) (Vite)
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Editor**: [TipTap](https://tiptap.dev/)
+- **Routing**: [React Router](https://reactrouter.com/)
+- **HTTP Client**: [Axios](https://axios-http.com/)
+- **Icons**: [React Icons](https://react-icons.github.io/react-icons/)
+- **Date Handling**: [date-fns](https://date-fns.org/)
 
-**💬 Questions? [Start a discussion](https://github.com/yourusername/notes-app/discussions)**
+### Backend
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Framework**: [Express.js](https://expressjs.com/)
+- **Database**: [MongoDB](https://www.mongodb.com/) (Mongoose ODM)
+- **Authentication**: JWT, Passport.js (Google OAuth)
+- **File Storage**: [Cloudinary](https://cloudinary.com/) (via Multer)
+- **Security**: Helmet, Express-Rate-Limit, HPP, XSS-Clean
+- **Email**: Nodemailer (configured for verification/notifications)
+
+---
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- MongoDB Atlas Account (or local instance)
+- Cloudinary Account
+- Google Cloud Console Project (for OAuth)
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd notes-app
+```
+
+### 2. Backend Setup
+Navigate to the backend directory and install dependencies:
+```bash
+cd backend
+npm install
+```
+Create a `.env` file in the `backend` folder:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+REFRESH_TOKEN_SECRET=your_refresh_secret
+CLIENT_URL=http://localhost:5173
+NODE_ENV=development
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+Start the server:
+```bash
+npm run dev
+```
+
+### 3. Frontend Setup
+Navigate to the frontend directory and install dependencies:
+```bash
+cd ../frontend
+npm install
+```
+Create a `.env` file in the `frontend` folder:
+```env
+VITE_API_URL=http://localhost:5000
+```
+Start the frontend:
+```bash
+npm run dev
+```
+
+---
+
+## 📂 Project Structure
+
+```
+root
+├── backend/
+│   ├── config/         # Database & Passport config
+│   ├── controllers/    # Request handlers (Auth, Note, Share)
+│   ├── middlewares/    # Auth, Error, & Security middlewares
+│   ├── models/         # Mongoose User & Note schemas
+│   ├── routes/         # API Route definitions
+│   ├── services/       # Email & File upload services
+│   └── server.js       # Entry point
+│
+└── frontend/
+    ├── public/         # Static assets (pencil.png, etc.)
+    ├── src/
+    │   ├── components/ # Reusable UI components (Sidebar, Editor, Modals)
+    │   ├── context/    # Theme Context
+    │   ├── pages/      # Page views (Dashboard, Login, Signup)
+    │   ├── redux/      # Global state management (Slices)
+    │   ├── services/   # Axios API setup
+    │   └── utils/      # Helpers (Date formatting, Validation)
+    └── main.jsx        # App entry point
+```
+
+## 👨‍💻 Author
+Developed by **Aryan Srivastava**
+- Email: aryansri6362@gmail.com
+- Phone: 8744012089

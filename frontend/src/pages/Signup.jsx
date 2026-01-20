@@ -27,6 +27,7 @@ const Signup = () => {
         name: '',
         email: '',
         password: '',
+        confirmPassword: ''
     });
 
     const [formErrors, setFormErrors] = useState({});
@@ -69,6 +70,12 @@ const Signup = () => {
             return;
         }
 
+        // Check if passwords match
+        if (formData.password !== formData.confirmPassword) {
+            setFormErrors({ confirmPassword: 'Passwords do not match' });
+            return;
+        }
+
         // Dispatch register action
         const result = await dispatch(register(formData));
 
@@ -83,8 +90,8 @@ const Signup = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 px-4 py-12 relative">
-            <div className="absolute top-6 right-6 flex items-center gap-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative">
+            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 flex items-center gap-2 sm:gap-4">
                 <button
                     onClick={toggleDarkMode}
                     className="p-2 rounded-lg bg-white/50 dark:bg-black/50 hover:bg-white/80 dark:hover:bg-black/70 text-gray-700 dark:text-gray-300 transition-all backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm"
@@ -94,15 +101,15 @@ const Signup = () => {
                 </button>
                 <Link
                     to="/contact"
-                    className="px-4 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 border border-primary-800 rounded-lg transition-all shadow-md flex items-center gap-2"
+                    className="hidden sm:flex px-4 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 border border-primary-800 rounded-lg transition-all shadow-md items-center gap-2"
                 >
                     <span>Contact Me</span>
                 </Link>
             </div>
             <div className="max-w-md w-full">
                 {/* Header */}
-                <div className="text-center mb-8 animate-fadeIn">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                <div className="text-center mb-6 sm:mb-8 animate-fadeIn">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
                         Create Account
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
@@ -181,6 +188,26 @@ const Signup = () => {
                             <p className="text-xs text-gray-500 mt-1">
                                 Minimum 6 characters
                             </p>
+                        </div>
+
+                        {/* Confirm Password Field */}
+                        <div>
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Confirm Password
+                            </label>
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                className={`input-field ${formErrors.confirmPassword ? 'border-red-500' : ''}`}
+                                placeholder="••••••••"
+                                disabled={loading}
+                            />
+                            {formErrors.confirmPassword && (
+                                <p className="error-text">{formErrors.confirmPassword}</p>
+                            )}
                         </div>
 
                         {/* Submit Button */}

@@ -6,7 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
-import { FiBold, FiItalic, FiCode, FiList, FiImage, FiPaperclip, FiShare2, FiBell, FiClock, FiUnderline, FiMail } from 'react-icons/fi';
+import { FiBold, FiItalic, FiCode, FiList, FiImage, FiPaperclip, FiShare2, FiBell, FiClock, FiUnderline, FiMail, FiArrowLeft, FiX } from 'react-icons/fi';
 import { updateNote, updateNoteOptimistic, uploadAttachment } from '../redux/slices/notesSlice';
 import AIToolbar from './AIToolbar';
 import ShareModal from './ShareModal';
@@ -18,7 +18,7 @@ import VersionHistoryPanel from './VersionHistoryPanel';
  * Rich text editor using TipTap
  * Features: Auto-save, formatting toolbar, image upload
  */
-const NoteEditor = () => {
+const NoteEditor = ({ onMobileBack = () => { } }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { currentNote } = useSelector((state) => state.notes);
@@ -32,13 +32,13 @@ const NoteEditor = () => {
     const editor = useEditor({
         extensions: [
             StarterKit,
-            // Image, // Disabled to remove images from text area as requested
             Underline,
             Placeholder.configure({
                 placeholder: 'Start writing your note...',
             }),
         ],
         content: currentNote?.content || '',
+        editable: currentNote?.permission !== 'view', // Read-only if permission is 'view'
         onUpdate: ({ editor }) => {
             // Auto-save on content change
             handleAutoSave(editor.getHTML());
@@ -158,21 +158,62 @@ const NoteEditor = () => {
         );
     }
 
+    const handleDeleteAttachment = async (attachmentId) => {
+        if (!window.confirm('Delete this attachment?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/notes/${currentNote._id}/attachments/${attachmentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete');
+
+            // Refresh note to get updated attachments
+            const updatedAttachments = currentNote.attachments.filter(a => a._id !== attachmentId);
+            dispatch(updateNote({
+                id: currentNote._id,
+                updates: { attachments: updatedAttachments }
+            }));
+        } catch (error) {
+            alert('Failed to delete attachment');
+        }
+    };
+
     return (
-        <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+        <div className="flex-1 h-screen flex flex-col bg-white dark:bg-gray-900">
             {/* Header */}
             <div className="border-b border-gray-200 dark:border-gray-700 p-4">
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={handleSave}
-                    placeholder="Note title..."
-                    className="w-full text-2xl font-bold text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 mb-2"
-                />
-                <div className="flex items-center justify-between">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {saveStatus === 'saving' ? 'Saving...' : 'All changes saved'}
+                <div className="flex items-center gap-2 mb-2">
+                    {/* Back Button - Mobile Only */}
+                    <button
+                        onClick={onMobileBack}
+                        className="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                        aria-label="Back to notes"
+                    >
+                        <FiArrowLeft size={20} />
+                    </button>
+
+                    <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        onBlur={handleSave}
+                        disabled={currentNote.permission === 'view'}
+                        placeholder="Note title..."
+                        className="flex-1 text-2xl font-bold text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-75 disabled:cursor-not-allowed"
+                    />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                        {currentNote.permission === 'view' ? (
+                            <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full font-medium">Read Only</span>
+                        ) : (
+                            saveStatus === 'saving' ? 'Saving...' : 'All changes saved'
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <AIToolbar note={currentNote} onUpdate={() => window.location.reload()} />
@@ -209,8 +250,8 @@ const NoteEditor = () => {
                 </div>
             </div>
 
-            {/* Toolbar */}
-            {editor && (
+            {/* Toolbar - Only show if editable */}
+            {editor && currentNote.permission !== 'view' && (
                 <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex items-center gap-1">
                     <button
                         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -296,6 +337,7 @@ const NoteEditor = () => {
                                     rel="noopener noreferrer"
                                     className="group relative border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-primary-500 dark:hover:border-primary-400 transition-all hover:shadow-lg"
                                 >
+                                    <button onClick={(e) => { e.preventDefault(); handleDeleteAttachment(attachment._id); }} className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" title="Delete"><FiX size={14} /></button>
                                     {attachment.type === 'image' ? (
                                         <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
                                             <img
@@ -360,7 +402,7 @@ const NoteEditor = () => {
                 onClose={() => setShowVersionHistory(false)}
                 onRestore={() => window.location.reload()}
             />
-        </div>
+        </div >
     );
 };
 

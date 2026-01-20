@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, getMe, refreshAccessToken, logout } from '../controllers/authController.js';
+import { registerUser, loginUser, getMe, refreshAccessToken, logout, guestLogin } from '../controllers/authController.js';
 import { sendVerification, verifyEmail, resendVerification } from '../controllers/verificationController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { authLimiter, verificationLimiter } from '../middlewares/rateLimitMiddleware.js';
@@ -19,6 +19,7 @@ const router = express.Router();
 // Public routes with rate limiting
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
+router.post('/guest-login', authLimiter, guestLogin);
 router.post('/refresh', refreshAccessToken);
 
 // Protected routes

@@ -4,9 +4,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import GoogleCallback from './pages/GoogleCallback';
-import EmailVerification from './pages/EmailVerification';
 import ContactUs from './pages/ContactUs';
 import PrivateRoute from './components/PrivateRoute';
+import SharedNote from './pages/SharedNote';
 
 /**
  * Main App Component
@@ -29,6 +29,7 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/auth/google/callback" element={<GoogleCallback />} />
                 <Route path="/contact" element={<ContactUs />} />
+                <Route path="/shared/:token" element={<SharedNote />} />
 
                 {/* Protected Routes */}
                 <Route
@@ -36,14 +37,6 @@ function App() {
                     element={
                         <PrivateRoute>
                             <Dashboard />
-                        </PrivateRoute>
-                    }
-                />
-                <Route
-                    path="/verify-email"
-                    element={
-                        <PrivateRoute>
-                            <EmailVerification />
                         </PrivateRoute>
                     }
                 />

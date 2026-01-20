@@ -15,6 +15,8 @@ import {
     removeShare,
     revokeShareLink,
     getSharedWithMe,
+    getPendingShares,
+    respondToShareRequest,
 } from '../controllers/shareController.js';
 import {
     createVersion,
@@ -40,6 +42,8 @@ router.route('/')
 
 // Shared notes
 router.get('/shared-with-me', protect, getSharedWithMe);
+router.get('/share/pending', protect, getPendingShares);
+router.post('/:id/share/respond', protect, respondToShareRequest);
 router.get('/shared/:token', getSharedNote); // Public route for share links
 
 // Single note routes

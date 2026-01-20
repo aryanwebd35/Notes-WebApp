@@ -48,12 +48,14 @@ const shareNote = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to share this note');
     }
 
-    // Find user to share with
-    const userToShare = await User.findOne({ email });
+    // Find user to share with (case-insensitive)
+    const userToShare = await User.findOne({
+        email: { $regex: new RegExp(`^${email}$`, 'i') }
+    });
 
     if (!userToShare) {
         res.status(404);
-        throw new Error('User not found with this email');
+        throw new Error(`User not found with email: ${email}`);
     }
 
     // Can't share with yourself
@@ -85,6 +87,7 @@ const shareNote = asyncHandler(async (req, res) => {
     note.sharedWith.push({
         userId: userToShare._id,
         permission,
+        status: 'pending'
     });
 
     await note.save();
@@ -248,20 +251,96 @@ const getSharedWithMe = asyncHandler(async (req, res) => {
         .populate('userId', 'name email')
         .sort({ updatedAt: -1 });
 
-    // Add permission info
-    const notesWithPermission = notes.map((note) => {
-        const share = note.sharedWith.find(
-            (s) => s.userId.toString() === req.user._id.toString()
-        );
+    // Add permissions info and filter only accepted shares
+    const notesWithPermission = notes
+        .map((note) => {
+            const share = note.sharedWith.find(
+                (s) => s.userId.toString() === req.user._id.toString()
+            );
 
-        return {
-            ...note.toObject(),
-            myPermission: share.permission,
-            owner: note.userId.name,
-        };
-    });
+            // Only show accepted shares
+            if (share.status !== 'accepted') return null;
+
+            return {
+                ...note.toObject(),
+                myPermission: share.permission,
+                owner: note.userId.name,
+            };
+        })
+        .filter(Boolean);
 
     res.json(notesWithPermission);
+});
+
+/**
+ * @desc    Get pending share requests
+ * @route   GET /api/notes/share/pending
+ * @access  Private
+ */
+const getPendingShares = asyncHandler(async (req, res) => {
+    const notes = await Note.find({
+        'sharedWith': {
+            $elemMatch: {
+                userId: req.user._id,
+                status: 'pending'
+            }
+        }
+    }).populate('userId', 'name email');
+
+    const requests = notes.map(note => ({
+        _id: note._id,
+        title: note.title,
+        owner: note.userId.name,
+        ownerEmail: note.userId.email,
+        requestedAt: note.sharedWith.find(s => s.userId.toString() === req.user._id.toString()).sharedAt
+    }));
+
+    res.json(requests);
+});
+
+/**
+ * @desc    Respond to share request
+ * @route   POST /api/notes/:id/share/respond
+ * @access  Private
+ * 
+ * Body: { status: 'accepted' | 'rejected' }
+ */
+const respondToShareRequest = asyncHandler(async (req, res) => {
+    const { status } = req.body;
+
+    if (!['accepted', 'rejected'].includes(status)) {
+        res.status(400);
+        throw new Error('Invalid status');
+    }
+
+    const note = await Note.findById(req.params.id);
+
+    if (!note) {
+        res.status(404);
+        throw new Error('Note not found');
+    }
+
+    const shareIndex = note.sharedWith.findIndex(
+        s => s.userId.toString() === req.user._id.toString()
+    );
+
+    if (shareIndex === -1) {
+        res.status(404);
+        throw new Error('Share request not found');
+    }
+
+    if (status === 'rejected') {
+        // Remove the share entry
+        note.sharedWith.splice(shareIndex, 1);
+        await note.save();
+        return res.json({ message: 'Share request rejected' });
+    }
+
+    // Accept request
+    note.sharedWith[shareIndex].status = 'accepted';
+    await note.save();
+
+    res.json({ message: 'Share request accepted' });
 });
 
 export {
@@ -271,4 +350,6 @@ export {
     removeShare,
     revokeShareLink,
     getSharedWithMe,
+    getPendingShares,
+    respondToShareRequest,
 };

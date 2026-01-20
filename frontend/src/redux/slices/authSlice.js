@@ -80,6 +80,32 @@ export const login = createAsyncThunk(
 );
 
 /**
+ * Async Thunk: Guest Login
+ * POST /api/auth/guest-login
+ */
+export const guestLogin = createAsyncThunk(
+    'auth/guestLogin',
+    async (_, { rejectWithValue }) => {
+        try {
+            const { data } = await api.post('/api/auth/guest-login');
+
+            // Save to localStorage
+            localStorage.setItem('user', JSON.stringify(data));
+            localStorage.setItem('token', data.token);
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
+            }
+
+            return data;
+        } catch (error) {
+            const message =
+                error.response?.data?.message || error.message || 'Guest login failed';
+            return rejectWithValue(message);
+        }
+    }
+);
+
+/**
  * Async Thunk: Get Current User
  * GET /api/auth/me
  */
@@ -192,6 +218,22 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(login.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Guest Login
+            .addCase(guestLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(guestLogin.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+                state.token = action.payload.token;
+                state.refreshToken = action.payload.refreshToken;
+                state.error = null;
+            })
+            .addCase(guestLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

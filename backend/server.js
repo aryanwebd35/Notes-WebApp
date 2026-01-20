@@ -56,7 +56,7 @@ if (!process.env.GEMINI_API_KEY) {
 }
 
 // Connect to MongoDB
-connectDB();
+await connectDB();
 
 // Start reminder scheduler (only in production or if explicitly enabled)
 if (process.env.NODE_ENV === 'production' || process.env.ENABLE_SCHEDULER === 'true') {

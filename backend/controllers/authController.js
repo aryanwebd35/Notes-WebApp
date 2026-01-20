@@ -69,23 +69,25 @@ const registerUser = asyncHandler(async (req, res) => {
         // Store refresh token
         user.refreshTokens.push({ token: refreshToken });
 
-        // Generate and send OTP for email verification
-        const verificationCode = generateVerificationCode();
-        const hashedCode = hashCode(verificationCode);
-        const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-        user.verificationCode = hashedCode;
-        user.verificationCodeExpiry = expiry;
+        // Email verification disabled (Resend free tier limitation)
+        // Users can login immediately without verification
+        user.isVerified = true; // Auto-verify all users
         await user.save();
 
-        // Send verification email
-        try {
-            await sendVerificationEmail(user.email, verificationCode, user.name);
-            console.log(`Verification email sent to ${user.email}`);
-        } catch (error) {
-            console.error('Failed to send verification email:', error);
-            // Don't fail registration if email fails, user can resend later
-        }
+        // Generate and send OTP for email verification (DISABLED)
+        // const verificationCode = generateVerificationCode();
+        // const hashedCode = hashCode(verificationCode);
+        // const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        // user.verificationCode = hashedCode;
+        // user.verificationCodeExpiry = expiry;
+        // await user.save();
+        // Send verification email (DISABLED)
+        // try {
+        //     await sendVerificationEmail(user.email, verificationCode, user.name);
+        //     console.log(`Verification email sent to ${user.email}`);
+        // } catch (error) {
+        //     console.error('Failed to send verification email:', error);
+        // }
 
         res.status(201).json({
             _id: user._id,
@@ -269,4 +271,48 @@ const logout = asyncHandler(async (req, res) => {
     res.json({ message: 'Logged out successfully' });
 });
 
-export { registerUser, loginUser, getMe, refreshAccessToken, logout };
+/**
+ * @desc    Login as Guest (create temporary account)
+ * @route   POST /api/auth/guest-login
+ * @access  Public
+ */
+const guestLogin = asyncHandler(async (req, res) => {
+    // Generates a random guest identity
+    const guestId = crypto.randomBytes(4).toString('hex');
+    const name = `Guest User ${guestId}`;
+    const email = `guest_${Date.now()}_${guestId}@guest.com`;
+    const password = crypto.randomBytes(16).toString('hex');
+
+    const user = await User.create({
+        name,
+        email,
+        password,
+        authProvider: 'credentials',
+        isGuest: true,
+        isVerified: true
+    });
+
+    if (user) {
+        const accessToken = generateToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        user.refreshTokens.push({ token: refreshToken });
+        await user.save();
+
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            authProvider: user.authProvider,
+            isGuest: true,
+            isVerified: user.isVerified,
+            token: accessToken,
+            refreshToken,
+        });
+    } else {
+        res.status(400);
+        throw new Error('Failed to create guest session');
+    }
+});
+
+export { registerUser, loginUser, getMe, refreshAccessToken, logout, guestLogin };

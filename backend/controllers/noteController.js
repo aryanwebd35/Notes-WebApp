@@ -2,6 +2,9 @@ import asyncHandler from 'express-async-handler';
 import Note from '../models/Note.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
 import { cleanupTempFile } from '../middlewares/uploadMiddleware.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * @desc    Create a new note
@@ -45,8 +48,19 @@ const getNotes = asyncHandler(async (req, res) => {
 
     // Build query
     // Build query
+    // Build query to find notes owned by user OR shared with user (accepted)
     const query = {
-        userId: req.user._id,
+        $or: [
+            { userId: req.user._id },
+            {
+                sharedWith: {
+                    $elemMatch: {
+                        userId: req.user._id,
+                        status: 'accepted'
+                    }
+                }
+            }
+        ]
     };
 
     // Handle archived filter
@@ -55,7 +69,7 @@ const getNotes = asyncHandler(async (req, res) => {
     } else if (archived === 'false' || archived === undefined) {
         query.isArchived = false;
     }
-    // If archived === 'all', don't add isArchived to query (fetch both)
+    // If archived === 'all', don't add isArchived check unless specifically handling mixed queries
 
     // Filter by tag
     if (tag) {
@@ -64,16 +78,41 @@ const getNotes = asyncHandler(async (req, res) => {
 
     // Search in title and content
     if (search) {
-        query.$or = [
-            { title: { $regex: search, $options: 'i' } },
-            { content: { $regex: search, $options: 'i' } },
+        query.$and = [
+            query.$or ? { $or: query.$or } : {}, // Preserve previous OR condition
+            {
+                $or: [
+                    { title: { $regex: search, $options: 'i' } },
+                    { content: { $regex: search, $options: 'i' } },
+                ]
+            }
         ];
+        delete query.$or; // Removed top-level OR to prevent conflict, handled inside $and
     }
 
     // Fetch notes (pinned first, then by date)
-    const notes = await Note.find(query)
+    let notes = await Note.find(query)
+        .populate('userId', 'name email') // Populate owner info
         .sort({ isPinned: -1, createdAt: -1 })
         .lean();
+
+    // Add permission info to shared notes
+    notes = notes.map(note => {
+        const isOwner = note.userId._id.toString() === req.user._id.toString();
+        let permission = 'edit'; // Owner has full access
+
+        if (!isOwner) {
+            const share = note.sharedWith.find(s => s.userId.toString() === req.user._id.toString());
+            permission = share ? share.permission : 'view';
+        }
+
+        return {
+            ...note,
+            isOwner,
+            permission,
+            owner: isOwner ? 'Me' : note.userId.name
+        };
+    });
 
     res.json(notes);
 });
@@ -120,13 +159,15 @@ const updateNote = asyncHandler(async (req, res) => {
     }
 
     // Update fields
-    const { title, content, tags, isPinned, isArchived } = req.body;
+    const { title, content, tags, isPinned, isArchived, reminderAt, reminderStatus } = req.body;
 
     note.title = title || note.title;
     note.content = content || note.content;
     note.tags = tags !== undefined ? tags : note.tags;
     note.isPinned = isPinned !== undefined ? isPinned : note.isPinned;
     note.isArchived = isArchived !== undefined ? isArchived : note.isArchived;
+    note.reminderAt = reminderAt !== undefined ? reminderAt : note.reminderAt;
+    note.reminderStatus = reminderStatus !== undefined ? reminderStatus : note.reminderStatus;
 
     const updatedNote = await note.save();
 
@@ -198,27 +239,16 @@ const uploadAttachment = asyncHandler(async (req, res) => {
     console.log('File received:', req.file);
 
     try {
-        // Determine file type
+        // Upload to Cloudinary
         const isImage = req.file.mimetype.startsWith('image/');
+        const resourceType = isImage ? 'image' : 'raw';
 
-        // Local Storage Strategy (No Cloudinary keys needed)
-        const filename = req.file.filename;
-        // File is already saved in uploads/temp by middleware, but we'll use it from there
-        // Or move it to a permanent folder. For now, let's keep it simple.
-        // Since middleware saves to uploads/temp, we can just use that or move it.
-        // Let's assume we want to serve it.
-
-        // Construct local URL
-        // req.protocol + '://' + req.get('host') results in http://localhost:5000
-        const protocol = req.protocol;
-        const host = req.get('host');
-        // Encode filename to handle spaces and special characters
-        const fileUrl = `${protocol}://${host}/uploads/temp/${encodeURIComponent(filename)}`;
+        const cloudinaryResult = await uploadToCloudinary(req.file.path, 'notes-app', resourceType);
 
         // Add attachment to note
         note.attachments.push({
-            url: fileUrl,
-            publicId: filename, // Use filename as ID for local
+            url: cloudinaryResult.url,
+            publicId: cloudinaryResult.publicId,
             type: isImage ? 'image' : 'document',
             name: req.file.originalname,
             size: req.file.size,
@@ -226,8 +256,8 @@ const uploadAttachment = asyncHandler(async (req, res) => {
 
         await note.save();
 
-        // No cleanup needed since we are keeping the file
-        // cleanupTempFile(req.file.path); 
+        // Clean up temp file after upload to Cloudinary
+        cleanupTempFile(req.file.path);
 
         res.json({
             message: 'File uploaded successfully',
@@ -268,8 +298,13 @@ const deleteAttachment = asyncHandler(async (req, res) => {
     }
 
     // Delete from Cloudinary
-    const resourceType = attachment.type === 'image' ? 'image' : 'raw';
-    await deleteFromCloudinary(attachment.publicId, resourceType);
+    try {
+        const resourceType = attachment.type === 'image' ? 'image' : 'raw';
+        await deleteFromCloudinary(attachment.publicId, resourceType);
+        console.log('✅ Deleted from Cloudinary:', attachment.publicId);
+    } catch (error) {
+        console.error('❌ Error deleting from Cloudinary:', error);
+    }
 
     // Remove from note
     attachment.deleteOne();

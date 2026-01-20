@@ -98,6 +98,11 @@ const noteSchema = new mongoose.Schema(
             sharedAt: {
                 type: Date,
                 default: Date.now,
+            },
+            status: {
+                type: String,
+                enum: ['pending', 'accepted'],
+                default: 'pending',
             }
         }],
         shareToken: {

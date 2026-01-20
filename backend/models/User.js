@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
             lowercase: true,
             trim: true,
             match: [
-                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
                 'Please provide a valid email',
             ],
         },
@@ -49,6 +49,10 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ['credentials', 'google'],
             default: 'credentials',
+        },
+        isGuest: {
+            type: Boolean,
+            default: false,
         },
         isVerified: {
             type: Boolean,

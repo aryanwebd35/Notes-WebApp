@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { FiStar, FiArchive, FiTrash2, FiPaperclip } from 'react-icons/fi';
+import { FiStar, FiArchive, FiTrash2, FiPaperclip, FiMenu, FiClock } from 'react-icons/fi';
 import { setCurrentNote, updateNote, deleteNote } from '../redux/slices/notesSlice';
 import { formatDistanceToNow } from '../utils/dateUtils';
 
@@ -7,7 +7,7 @@ import { formatDistanceToNow } from '../utils/dateUtils';
  * NotesList Component
  * Middle column showing list of notes
  */
-const NotesList = () => {
+const NotesList = ({ onMobileMenuToggle = () => { } }) => {
     const dispatch = useDispatch();
     const { notes, currentNote, loading, filter } = useSelector((state) => state.notes);
 
@@ -52,19 +52,32 @@ const NotesList = () => {
 
     if (loading && filteredNotes.length === 0) {
         return (
-            <div className="w-96 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center">
+            <div className="w-full md:w-96 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center">
                 <div className="text-gray-500 dark:text-gray-400">Loading notes...</div>
             </div>
         );
     }
 
     return (
-        <div className="w-96 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="w-full md:w-96 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
             {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {filteredNotes.length} {filteredNotes.length === 1 ? 'Note' : 'Notes'}
-                </h2>
+                <div className="flex items-center justify-between">
+                    {/* Hamburger Menu - Mobile Only */}
+                    <button
+                        onClick={onMobileMenuToggle}
+                        className="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                        aria-label="Open menu"
+                    >
+                        <FiMenu size={20} />
+                    </button>
+
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {filteredNotes.length} {filteredNotes.length === 1 ? 'Note' : 'Notes'}
+                    </h2>
+
+                    <div className="w-8 md:hidden" /> {/* Spacer for alignment */}
+                </div>
             </div>
 
             {/* Notes List */}
@@ -110,14 +123,22 @@ const NotesList = () => {
                                 </div>
 
                                 {/* Content Preview */}
-                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
-                                    {note.content?.replace(/<[^>]*>/g, '') || 'No content'}
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+                                    {(note.content?.replace(/<[^>]*>/g, '') || 'No content').substring(0, 50)}
+                                    {note.content?.replace(/<[^>]*>/g, '').length > 50 ? '...' : ''}
                                 </p>
 
                                 {/* Metadata */}
                                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                     <span>{formatDistanceToNow(note.updatedAt)}</span>
                                     <div className="flex items-center gap-2">
+                                        {note.reminderAt && (
+                                            <span className={`flex items-center gap-1 text-xs ${new Date(note.reminderAt) < new Date() ? 'text-red-500 font-medium' : 'text-blue-500'
+                                                }`}>
+                                                <FiClock size={12} />
+                                                {new Date(note.reminderAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
                                         {note.attachments?.length > 0 && (
                                             <span className="flex items-center gap-1">
                                                 <FiPaperclip size={12} />
