@@ -142,7 +142,3 @@ root
     └── main.jsx        # App entry point
 ```
 
-## 👨‍💻 Author
-Developed by **Aryan Srivastava**
-- Email: aryansri6362@gmail.com
-- Phone: 8744012089
